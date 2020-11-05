@@ -61,7 +61,7 @@ log.info("Danulyak1");
 
 
 
-        Product product = new Product(id,name,description,price);
+        Product product = new Product(name,price,description);
 
 
         log.info("Danulyak2");

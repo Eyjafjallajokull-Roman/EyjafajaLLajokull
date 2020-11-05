@@ -24,6 +24,16 @@ public class Product {
     @Column(name = "price")
     private double price;
 
+@OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private User user;
+
+    public Product(int id, String name, String description, double price) {
+        this.id = RandomIdGenerator.getRandomID();
+//        System.out.println(this.id);
+        this.price = price;
+        this.name = name;
+        this.description = description;
+    }
 
     public Product(String name, double price, String description) {
 //        this.id = RandomIdGenerator.getRandomID();
