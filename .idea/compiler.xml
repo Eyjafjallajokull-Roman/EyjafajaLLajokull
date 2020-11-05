@@ -2,6 +2,7 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
       <profile name="Maven default annotation processors profile" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
@@ -15,6 +16,7 @@
       <module name="Homework1" target="8" />
       <module name="Homework2" target="9" />
       <module name="Jepa123" target="1.5" />
+      <module name="JPA" target="1.5" />
     </bytecodeTargetLevel>
   </component>
 </project>
