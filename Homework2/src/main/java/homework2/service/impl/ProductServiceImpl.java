@@ -1,47 +1,56 @@
 package homework2.service.impl;
 
-import homework2.dao.ProductDao;
-import homework2.dao.imp.ProductDaoImp;
+
+
 import homework2.dao.model.Product;
 import homework2.exception.AlreadyExistException;
 import homework2.exception.NotFoundException;
+import homework2.jdbc.SessionFactoryUtil;
 import homework2.service.ProductService;
 import lombok.extern.log4j.Log4j;
+import org.hibernate.Session;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Log4j
 public class ProductServiceImpl implements ProductService {
-    private  ProductDao productDao;
+    private Session session;
 
     public ProductServiceImpl() {
-        this.productDao = new ProductDaoImp();
+        this.session =  SessionFactoryUtil.createSession();
     }
 
     @Override
     public List<Product> readAll() throws SQLException {
         log.info("trying to read users");
-        return productDao.readAll();
+        return (ArrayList<Product>)session.createQuery("select u from Product u ").list();
     }
 
     @Override
     public Product read(int id) throws SQLException, NotFoundException {
-       log.info("trying to read user");
-       Product product = productDao.read(id);
-       if (product==null){
-           throw new NotFoundException("Product don`t exist by this id");
-       }
-       return product;
+       log.info("trying to read product");
+
+       return session.get(Product.class, id);
     }
 
     @Override
     public void create(Product product) throws SQLException, AlreadyExistException {
         log.info("try to create product");
-        if (productDao.exists(product.getId())){
-            throw new AlreadyExistException("This product already exist");
+        try {
+
+            session.persist(product);
+            session.beginTransaction().commit();
+            log.info("good");
+
+        }catch (Exception e){
+            log.info("here we go again");
+            session.beginTransaction().rollback();
+
         }
-        productDao.create(product);
+
+
         log.info("create this product " + product.getName());
 
     }
@@ -49,18 +58,33 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void delete(int id) throws SQLException, NotFoundException {
         log.info("try to delete by this id =" + id);
-        if (!productDao.delete(id)){
-            throw new NotFoundException("No product by this id");
+        try {
+            Product product = read(id);
+
+            session.delete(product);
+            session.beginTransaction().commit();
+            log.info("deleted");
+
+        }catch (Exception e){
+            log.info("no delete");
+            session.beginTransaction().rollback();
+
         }
+
     }
 
     @Override
     public void update(Product current) throws SQLException, NotFoundException {
-        log.info("trying to update product");
-        if (productDao.update(current)){
-            log.info("successful update");
-        } else {
-            throw new NotFoundException("Not found product");
+        try {
+           Product product = read(current.getId());
+            session.update(product);
+            session.beginTransaction().commit();
+            log.info("updated");
+
+        }catch (Exception e){
+            log.info("no update");
+            session.beginTransaction().rollback();
+
         }
 
 
