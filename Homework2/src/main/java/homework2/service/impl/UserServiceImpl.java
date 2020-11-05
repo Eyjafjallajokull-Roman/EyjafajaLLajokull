@@ -5,18 +5,24 @@ import homework2.dao.imp.UserDaoImp;
 import homework2.dao.model.User;
 import homework2.exception.AlreadyExistException;
 import homework2.exception.NotFoundException;
+import homework2.jdbc.FactoryManager;
 import homework2.service.UserService;
 import lombok.extern.log4j.Log4j;
 
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import java.sql.SQLException;
 import java.util.List;
 
 @Log4j
 public class UserServiceImpl implements UserService {
-    private UserDao userDao;
+    EntityManager entityManager;
 
     public UserServiceImpl(){
-        this.userDao = new UserDaoImp();
+        this.entityManager = FactoryManager.getEntityManager();
     }
 
 
@@ -24,51 +30,58 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<User> readAll() throws SQLException, ClassNotFoundException {
         log.info("Trying to read all users");
-        return userDao.readAll();
+        Query query =entityManager.createQuery("select u from User u");
+        return (List<User>) query.getResultList();
     }
 
     @Override
     public User read(int id) throws SQLException, NotFoundException, ClassNotFoundException {
         log.info("Trying to read current user");
-        User user = userDao.read(id);
-        if (user==null){
-            throw new NotFoundException("Not found user by this id :" + id);
-        }
-        return user;
+
+
+        return entityManager.find(User.class, id);
     }
 
     @Override
     public void create(User user) throws AlreadyExistException, ClassNotFoundException {
         log.info("Trying to create user");
-        try
+        if (!entityManager.getTransaction().isActive())
         {
-            if (userDao.existByEmail(user.getEmail()))
-            {
-                throw new AlreadyExistException("User with email " + user.getEmail() + " already exist.");
-            }
-
-            userDao.create(user);
-
-            log.info("New user with email " + user.getEmail() + " was create.");
-        } catch (SQLException e)
-        {
-            log.error("Exception in SQL", e);
+            entityManager.getTransaction().begin();
         }
-        log.info("govno123");
 
-    }
+        entityManager.persist(user);
+        entityManager.getTransaction().commit();
+            log.info("New user with email " + user.getEmail() + " was create.");
+        }
+
+
 
     @Override
     public void delete(int id) throws SQLException, ClassNotFoundException, NotFoundException {
-      if (!userDao.delete(id))
+        if (!entityManager.getTransaction().isActive())
         {
-            throw new NotFoundException("User with this: " + id + " dont exist");
+            entityManager.getTransaction().begin();
+            log.info("begin delete");
         }
+
+        User user = this.read(id);
+
+        entityManager.remove(user);
+        log.info("deleted");
+        entityManager.getTransaction().commit();
 
     }
 
     @Override
     public User readByEmail(String email) throws SQLException, ClassNotFoundException {
-        return userDao.readByEmail(email);
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<User> criteriaQuery = criteriaBuilder.createQuery(User.class);
+        Root<User> from = criteriaQuery.from(User.class);
+
+        criteriaQuery.select(from);
+        criteriaQuery.where(criteriaBuilder.equal(from.get("email"), email));
+
+        return entityManager.createQuery(criteriaQuery).getSingleResult();
     }
 }
